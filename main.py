@@ -12,8 +12,8 @@ from google.auth.transport.requests import Request
 API_KEY = "xDz4sl2a8Xht_z0TH8_svpSB309X17kv"
 
 # 📅 Rango de fechas
-start_date = datetime(2023, 10, 1)
-end_date = datetime(2022, 10, 2)
+start_date = datetime(2022, 10, 1)
+end_date = datetime(2023, 10, 2)
 
 # 🧲 Descargar datos de EURUSD en timeframe de 1 minuto
 symbol = "C:EURUSD"
@@ -39,7 +39,7 @@ while current_date < end_date:
 df = pd.DataFrame(data)
 df.to_csv("eurusd_1min.csv", index=False)
 
-# 🔐 Autenticación OAuth
+# 🔐 Autenticación OAuth por consola (sin localhost)
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 creds = None
 
@@ -50,8 +50,7 @@ if not creds or not creds.valid:
         creds.refresh(Request())
     else:
         flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        creds = flow.run_console()
-
+        creds = flow.run_console()  # ← evita error de localhost
     with open('token.json', 'w') as token:
         token.write(creds.to_json())
 
