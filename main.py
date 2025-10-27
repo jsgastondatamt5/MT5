@@ -1,18 +1,22 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+import os
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.auth.transport.requests import Request
 
 # 🔑 Polygon API Key
-API_KEY = "	xDz4sl2a8Xht_z0TH8_svpSB309X17kv"
+API_KEY = "xDz4sl2a8Xht_z0TH8_svpSB309X17kv"
 
 # 📅 Rango de fechas
 start_date = datetime(2023, 10, 1)
-end_date = datetime(2022, 10, 2)
+end_date = datetime(2023, 10, 2)
 
 # 🧲 Descargar datos de EURUSD en timeframe de 1 minuto
-symbol = "C:EURUSD"  # Forex symbol en Polygon
+symbol = "C:EURUSD"
 data = []
 
 current_date = start_date
@@ -35,22 +39,27 @@ while current_date < end_date:
 df = pd.DataFrame(data)
 df.to_csv("eurusd_1min.csv", index=False)
 
-# ☁️ Autenticación Google Drive
-gauth = GoogleAuth()
-gauth.LoadCredentialsFile("credentials.json")
-if gauth.credentials is None:
-    gauth.LocalWebserverAuth()
-elif gauth.access_token_expired:
-    gauth.Refresh()
-else:
-    gauth.Authorize()
-gauth.SaveCredentialsFile("credentials.json")
+# 🔐 Autenticación OAuth
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+creds = None
 
-drive = GoogleDrive(gauth)
+if os.path.exists('token.json'):
+    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+    with open('token.json', 'w') as token:
+        token.write(creds.to_json())
 
-# 📤 Subir archivo
-file = drive.CreateFile({'title': 'eurusd_1min.csv'})
-file.SetContentFile('eurusd_1min.csv')
-file.Upload()
+# ☁️ Subir archivo a Drive
+file_path = "eurusd_1min.csv"
+service = build('drive', 'v3', credentials=creds)
+file_metadata = {'name': os.path.basename(file_path)}
+media = MediaFileUpload(file_path, resumable=True)
+file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
 
+print(f"✅ Archivo subido a Google Drive con ID: {file.get('id')}")
 print("✅ Archivo EURUSD 1min subido a Google Drive.")
