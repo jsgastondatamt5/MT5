@@ -3,3 +3,6 @@ pandas
 pydrive
 oauth2client
 notebook
+google-api-python-client
+google-auth
+google-auth-oauthlib
