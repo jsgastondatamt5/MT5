@@ -1,22 +1,35 @@
 import pandas as pd
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
 from datetime import datetime
-from MetaTrader5 import initialize, shutdown, copy_rates_range
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
-# Inicializar MT5
-initialize()
+# 🔑 Alpaca API credentials
+ALPACA_API_KEY = "PKGZOOB3FOFGJDYJQX6RK32H5D"
+ALPACA_SECRET_KEY = "HPHRNsFzXeBAi1bGyfp7JDYkCqN65NZW24NBGVF4nt3M"
 
-# Descargar datos
-rates = copy_rates_range("EURUSD", timeframe=1,  # 1 = M1
-                         from_date=datetime(2023, 1, 1),
-                         to_date=datetime(2023, 1, 2))
+# 🕰️ Rango de fechas
+start_date = datetime(2023, 10, 1)
+end_date = datetime(2023, 10, 5)
 
-# Guardar como CSV
-df = pd.DataFrame(rates)
-df.to_csv("eurusd.csv", index=False)
+# 🧲 Inicializar cliente Alpaca
+client = StockHistoricalDataClient(ALPACA_API_KEY, ALPACA_SECRET_KEY)
 
-# Autenticación con Google Drive
+# 📈 Solicitar datos
+request_params = StockBarsRequest(
+    symbol_or_symbols=["AAPL"],
+    timeframe=TimeFrame.Day,
+    start=start_date,
+    end=end_date
+)
+
+bars = client.get_stock_bars(request_params)
+df = bars.df
+df.to_csv("aapl_data.csv", index=False)
+
+# ☁️ Autenticación Google Drive
 gauth = GoogleAuth()
 gauth.LoadCredentialsFile("credentials.json")
 if gauth.credentials is None:
@@ -29,10 +42,9 @@ gauth.SaveCredentialsFile("credentials.json")
 
 drive = GoogleDrive(gauth)
 
-# Subir archivo
-file = drive.CreateFile({'title': 'eurusd.csv'})
-file.SetContentFile('eurusd.csv')
+# 📤 Subir archivo
+file = drive.CreateFile({'title': 'aapl_data.csv'})
+file.SetContentFile('aapl_data.csv')
 file.Upload()
 
-shutdown()
-print("Archivo subido a Google Drive.")
+print("✅ Archivo subido a Google Drive.")
