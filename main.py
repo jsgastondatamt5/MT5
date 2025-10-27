@@ -13,7 +13,7 @@ API_KEY = "xDz4sl2a8Xht_z0TH8_svpSB309X17kv"
 
 # 📅 Rango de fechas
 start_date = datetime(2023, 10, 1)
-end_date = datetime(2023, 10, 2)
+end_date = datetime(2022, 10, 2)
 
 # 🧲 Descargar datos de EURUSD en timeframe de 1 minuto
 symbol = "C:EURUSD"
