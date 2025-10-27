@@ -1,33 +1,39 @@
+import requests
 import pandas as pd
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
-from alpaca.data.timeframe import TimeFrame
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
-# 🔑 Alpaca API credentials
-ALPACA_API_KEY = "PKGZOOB3FOFGJDYJQX6RK32H5D"
-ALPACA_SECRET_KEY = "HPHRNsFzXeBAi1bGyfp7JDYkCqN65NZW24NBGVF4nt3M"
+# 🔑 Polygon API Key
+API_KEY = "	xDz4sl2a8Xht_z0TH8_svpSB309X17kv"
 
-# 🕰️ Rango de fechas
+# 📅 Rango de fechas
 start_date = datetime(2023, 10, 1)
-end_date = datetime(2023, 10, 5)
+end_date = datetime(2023, 10, 2)
 
-# 🧲 Inicializar cliente Alpaca
-client = StockHistoricalDataClient(ALPACA_API_KEY, ALPACA_SECRET_KEY)
+# 🧲 Descargar datos de EURUSD en timeframe de 1 minuto
+symbol = "C:EURUSD"  # Forex symbol en Polygon
+data = []
 
-# 📈 Solicitar datos
-request_params = StockBarsRequest(
-    symbol_or_symbols=["AAPL"],
-    timeframe=TimeFrame.Day,
-    start=start_date,
-    end=end_date
-)
+current_date = start_date
+while current_date < end_date:
+    date_str = current_date.strftime("%Y-%m-%d")
+    url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{date_str}/{date_str}?adjusted=true&sort=asc&limit=50000&apiKey={API_KEY}"
+    response = requests.get(url)
+    results = response.json().get("results", [])
+    for item in results:
+        data.append({
+            "timestamp": datetime.fromtimestamp(item["t"] / 1000),
+            "open": item["o"],
+            "high": item["h"],
+            "low": item["l"],
+            "close": item["c"],
+            "volume": item["v"]
+        })
+    current_date += timedelta(days=1)
 
-bars = client.get_stock_bars(request_params)
-df = bars.df
-df.to_csv("aapl_data.csv", index=False)
+df = pd.DataFrame(data)
+df.to_csv("eurusd_1min.csv", index=False)
 
 # ☁️ Autenticación Google Drive
 gauth = GoogleAuth()
@@ -43,8 +49,8 @@ gauth.SaveCredentialsFile("credentials.json")
 drive = GoogleDrive(gauth)
 
 # 📤 Subir archivo
-file = drive.CreateFile({'title': 'aapl_data.csv'})
-file.SetContentFile('aapl_data.csv')
+file = drive.CreateFile({'title': 'eurusd_1min.csv'})
+file.SetContentFile('eurusd_1min.csv')
 file.Upload()
 
-print("✅ Archivo subido a Google Drive.")
+print("✅ Archivo EURUSD 1min subido a Google Drive.")
