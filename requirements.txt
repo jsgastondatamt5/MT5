@@ -1,3 +1,5 @@
 requests
 pandas
 pydrive
+oauth2client
+notebook
