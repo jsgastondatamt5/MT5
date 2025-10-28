@@ -74,11 +74,17 @@ He actualizado **TODO** tu sistema para usar **Dukascopy** en lugar de yfinance 
 pip install -r requirements.txt
 ```
 
-Setup kaggle:
+Setup Kaggle:
 
 ```bash
 chmod +x setup_kaggle.sh
 ./setup_kaggle.sh
+```
+
+Push Kaggle:
+
+```bash
+python push_to_kaggle.py
 ```
 
 ### Paso 2: Verificar
