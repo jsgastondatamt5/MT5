@@ -31,7 +31,8 @@ load_dotenv()
 CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 TOKEN_FILE = 'token.json'
-KAGGLE_WEBHOOK_URL = os.getenv('KAGGLE_WEBHOOK_URL', None)
+#kaggle kernels pull jsgastonalgotrading/forrest-kaggle-final
+KAGGLE_WEBHOOK_URL = os.getenv('KAGGLE_WEBHOOK_URL', 'kaggle.json')
 NOTIFICATION_FILE = 'drive_file_info.json'
 
 SYMBOL = "EURUSD=X"
