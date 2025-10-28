@@ -4,13 +4,18 @@ Descarga en tandas de 30 días del último año,
 guarda todos los CSV intermedios, los une y sube el final a Google Drive.
 creado con claude main_auto_kaggle.py y luego con chatgpt
 """
+"""
+Yahoo Finance EUR/USD Downloader - 1-minute data
+Descarga en tandas de 7 días del último año usando yfinance,
+guarda todos los CSV intermedios y los une en un único archivo final.
+"""
 
-import requests
+import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-import time
 import json
+import time
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -23,60 +28,39 @@ from dotenv import load_dotenv
 # ============================================================================
 load_dotenv()
 
-API_KEY = os.getenv('POLYGON_API_KEY', 'xDz4sl2a8Xht_z0TH8_svpSB309X17kv')
 CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 TOKEN_FILE = 'token.json'
 KAGGLE_WEBHOOK_URL = os.getenv('KAGGLE_WEBHOOK_URL', None)
 NOTIFICATION_FILE = 'drive_file_info.json'
-REQUESTS_PER_MINUTE = 5
-DELAY_BETWEEN_REQUESTS = 60 / REQUESTS_PER_MINUTE
+
+SYMBOL = "EURUSD=X"
+INTERVAL = "1m"
+DAYS_PER_BATCH = 7
 
 # ============================================================================
 # HELPERS
 # ============================================================================
 
-def download_data_with_rate_limit(symbol, start_date, end_date, api_key, delay=12):
-    """Descarga datos minuto a minuto dentro del rango indicado"""
-    print(f"\n📥 Descargando {symbol} del {start_date.date()} al {end_date.date()}...")
-    data = []
-    current_date = start_date
-    total_days = (end_date - start_date).days
+def download_batch(symbol, start, end, interval):
+    """Descarga una tanda de datos con yfinance"""
+    print(f"📥 Descargando {symbol} del {start.date()} al {end.date()}...")
+    try:
+        data = yf.download(symbol, start=start, end=end, interval=interval, progress=False)
+        if data.empty:
+            print("⚠️ No se recibieron datos.")
+            return None
+        data.reset_index(inplace=True)
+        data.rename(columns={"Datetime": "timestamp"}, inplace=True)
+        print(f"✅ {len(data)} registros descargados.")
+        return data
+    except Exception as e:
+        print(f"❌ Error descargando {symbol}: {e}")
+        return None
 
-    while current_date <= end_date:
-        date_str = current_date.strftime("%Y-%m-%d")
-        url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{date_str}/{date_str}?adjusted=true&sort=asc&limit=50000&apiKey={api_key}"
-
-        try:
-            r = requests.get(url, timeout=20)
-            if r.status_code == 200:
-                results = r.json().get("results", [])
-                for item in results:
-                    data.append({
-                        "timestamp": datetime.fromtimestamp(item["t"] / 1000),
-                        "open": item["o"],
-                        "high": item["h"],
-                        "low": item["l"],
-                        "close": item["c"],
-                        "volume": item["v"]
-                    })
-            elif r.status_code == 429:
-                print(f"⚠️ Rate limit alcanzado ({date_str}), esperando 60s...")
-                time.sleep(60)
-                continue
-            elif r.status_code == 403:
-                print("❌ Sin acceso a los datos (403). Verifica tu plan de Polygon.")
-                return None
-        except Exception as e:
-            print(f"⚠️ Error {e} en {date_str}")
-        current_date += timedelta(days=1)
-        time.sleep(delay)
-
-    df = pd.DataFrame(data)
-    print(f"✅ {len(df)} registros descargados en total para este rango.")
-    return df
 
 def get_google_credentials(credentials_file, token_file, scopes):
+    """Autenticación en Google Drive"""
     creds = None
     if os.path.exists(token_file):
         creds = Credentials.from_authorized_user_file(token_file, scopes)
@@ -94,12 +78,16 @@ def get_google_credentials(credentials_file, token_file, scopes):
                 token.write(creds.to_json())
     return creds
 
+
 def make_file_public(file_id, credentials):
+    """Hace el archivo accesible públicamente"""
     service = build('drive', 'v3', credentials=credentials)
     permission = {'type': 'anyone', 'role': 'reader'}
     service.permissions().create(fileId=file_id, body=permission).execute()
 
+
 def upload_to_drive(file_path, credentials):
+    """Sube archivo a Google Drive"""
     service = build('drive', 'v3', credentials=credentials)
     media = MediaFileUpload(file_path, resumable=True)
     file_metadata = {'name': os.path.basename(file_path)}
@@ -110,7 +98,9 @@ def upload_to_drive(file_path, credentials):
     print(f"☁️ Subido a Drive: {download_url}")
     return file_id, download_url
 
+
 def save_file_info_locally(file_id, file_url, metadata, filename=NOTIFICATION_FILE):
+    """Guarda metadatos localmente"""
     info = {
         "drive_file_id": file_id,
         "drive_file_url": file_url,
@@ -126,40 +116,37 @@ def save_file_info_locally(file_id, file_url, metadata, filename=NOTIFICATION_FI
 # ============================================================================
 
 def main():
-    symbol = "C:EURUSD"
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365)
-    batch_size = 30
-
-    print("\n==============================================")
-    print(f"🚀 Descargando EUR/USD del último año en tandas de {batch_size} días")
-    print("==============================================")
-
-    all_batches = []
     current_start = start_date
     batch_idx = 1
+    all_batches = []
+
+    print("\n==============================================")
+    print(f"🚀 Descargando EUR/USD del último año en tandas de {DAYS_PER_BATCH} días (intervalo 1m)")
+    print("==============================================")
 
     while current_start < end_date:
-        current_end = min(current_start + timedelta(days=batch_size - 1), end_date)
-        batch_name = f"eurusd_batch_{batch_idx}_{current_start.date()}_to_{current_end.date()}.csv"
+        current_end = min(current_start + timedelta(days=DAYS_PER_BATCH), end_date)
+        batch_file = f"eurusd_batch_{batch_idx}_{current_start.date()}_to_{current_end.date()}.csv"
 
-        df_batch = download_data_with_rate_limit(symbol, current_start, current_end, API_KEY, DELAY_BETWEEN_REQUESTS)
-
+        df_batch = download_batch(SYMBOL, current_start, current_end, INTERVAL)
         if df_batch is not None and not df_batch.empty:
-            df_batch.to_csv(batch_name, index=False)
-            print(f"💾 Guardado {batch_name} ({len(df_batch)} filas)")
+            df_batch.to_csv(batch_file, index=False)
+            print(f"💾 Guardado {batch_file} ({len(df_batch)} filas)")
             all_batches.append(df_batch)
         else:
-            print(f"⚠️ Sin datos en el rango {current_start.date()} - {current_end.date()}")
+            print(f"⚠️ Sin datos entre {current_start.date()} y {current_end.date()}")
 
         batch_idx += 1
-        current_start = current_end + timedelta(days=1)
+        current_start = current_end
+        time.sleep(1.5)  # ligero retraso para evitar sobrecarga
 
-    # Unir todo
     if not all_batches:
         print("❌ No se descargaron datos. Saliendo.")
         return
 
+    # Unir todo
     df_full = pd.concat(all_batches, ignore_index=True).sort_values("timestamp")
     output_file = f"eurusd_data_{datetime.now().strftime('%Y%m%d')}.csv"
     df_full.to_csv(output_file, index=False)
@@ -172,7 +159,7 @@ def main():
     file_id, download_url = upload_to_drive(output_file, creds)
 
     metadata = {
-        "symbol": symbol,
+        "symbol": SYMBOL,
         "batches": batch_idx - 1,
         "rows_total": len(df_full),
         "file_size_mb": round(size_mb, 2),
@@ -191,3 +178,4 @@ if __name__ == "__main__":
         print("\n⏸️ Interrumpido por el usuario.")
     except Exception as e:
         print(f"\n❌ Error inesperado: {e}")
+
