@@ -60,7 +60,7 @@ TOKEN_FILE = 'token.json'
 
 # Kaggle notification configuration
 KAGGLE_WEBHOOK_URL = os.getenv('KAGGLE_WEBHOOK_URL', None)  # Webhook endpoint
-KAGGLE_KERNEL_URL = os.getenv('KAGGLE_KERNEL_URL', None)    # Kaggle API endpoint
+KAGGLE_KERNEL_URL = os.getenv('KAGGLE_KERNEL_URL', kaggle.json)    # Kaggle API endpoint
 NOTIFICATION_FILE = 'drive_file_info.json'  # Local file with file info
 
 # ============================================================================
