@@ -1,14 +1,14 @@
 """
 Forrest Trading ML System - Auto-generated from Kaggle
-Generated: 2025-10-28 09:22:43
-Drive File ID: 16DcR_yIqsDB3HJGxZvBbgZI3fy7hufGa
+Generated: 2025-10-28 11:27:39
+Drive File ID: 18xh9AfGCX0pt81M1tUhUt4Dcpz-08qTA
 Data Source: Dukascopy
 """
 
 import os
 
 # CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '16DcR_yIqsDB3HJGxZvBbgZI3fy7hufGa'
+DRIVE_FILE_ID = '18xh9AfGCX0pt81M1tUhUt4Dcpz-08qTA'
 os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
 
 print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
