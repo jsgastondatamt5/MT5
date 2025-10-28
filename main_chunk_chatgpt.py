@@ -44,7 +44,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 # GitHub
 GITHUB_REPO = "https://github.com/jsgastondatamt5/MT5.git"  # repo a clonar
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')  # required
+GITHUB_TOKEN = os.getenv('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')  # required
 
 # Kaggle
 # Puedes poner el contenido de tu kaggle.json en la env var KAGGLE_JSON_CONTENT (string JSON),
