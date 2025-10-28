@@ -5455,7 +5455,7 @@ print('='*70)
 # ============================================================================
 GITHUB_USERNAME = 'jsgastondatamt5'       # ← TU USUARIO DE GITHUB
 GITHUB_REPO = 'de-Kaggle-a-github'       # ← TU REPOSITORIO
-GITHUB_TOKEN = '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'   # ← TU TOKEN (Settings > Developer > Personal tokens)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") #'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'   # ← TU TOKEN (Settings > Developer > Personal tokens)
 GITHUB_BRANCH = 'main'               # o 'master'
 # ============================================================================
 
