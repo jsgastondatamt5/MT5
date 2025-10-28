@@ -95,6 +95,12 @@ chmod +x find_kaggle.sh
 git pull --rebase
 ```
 
+# 4. Verificar kaggle (opcional pero recomendado)
+
+```bash
+which kaggle || echo "Necesito configurar kaggle"
+```
+
 ### Paso 2: Verificar
 
 ```bash
