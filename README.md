@@ -68,16 +68,17 @@ He actualizado **TODO** tu sistema para usar **Dukascopy** en lugar de yfinance 
 
 ## 🚀 CÓMO EMPEZAR AHORA (3 pasos)
 
-### Paso 1: Instalar Dukascopy
-
-```bash
-pip install dukascopy-python
-```
-
-O mejor aún, instalar todo:
+### Paso 1: Instalar todo
 
 ```bash
 pip install -r requirements.txt
+```
+
+Setup kaggle:
+
+```bash
+chmod +x setup_kaggle.sh
+./setup_kaggle.sh
 ```
 
 ### Paso 2: Verificar
@@ -88,8 +89,6 @@ python test_dukascopy.py
 
 Debe mostrar:
 ```
-✅ dukascopy-python installed
-✅ Downloaded X test records
 ✅ ALL TESTS PASSED!
 ```
 
