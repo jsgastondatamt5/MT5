@@ -120,7 +120,7 @@ Debe mostrar:
 ### Paso 3: ¡EJECUTAR!
 
 ```bash
-python main_chunk_dukascopy.py
+python main_chunk_dukascopy_v2.py
 ```
 # 2. Si el test pasa, pushea a Kaggle
 
