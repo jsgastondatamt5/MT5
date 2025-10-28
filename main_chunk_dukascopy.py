@@ -29,12 +29,12 @@ load_dotenv()
 # CONFIGURATION
 # ============================================================================
 
-CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH')
-KAGGLE_CONFIG_FILE = os.getenv('KAGGLE_CONFIG_PATH')
+CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+KAGGLE_CONFIG_FILE = os.getenv('KAGGLE_CONFIG_PATH', 'kaggle.json')
 
 # Date range - AUTOMÁTICO: desde hoy hacia atrás
 END_DATE = datetime.now()
-DAYS_TO_DOWNLOAD = int(os.getenv('DAYS_TO_DOWNLOAD', '365'))  # 12 meses por defecto
+DAYS_TO_DOWNLOAD = int(os.getenv('DAYS_TO_DOWNLOAD', '90'))  # 3 meses por defecto
 START_DATE = END_DATE - timedelta(days=DAYS_TO_DOWNLOAD)
 
 # Dukascopy configuration
@@ -60,15 +60,15 @@ OFFER_SIDE = dukascopy_python.OFFER_SIDE_BID
 
 # Google OAuth
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-TOKEN_FILE = os.getenv('GOOGLE_TOKEN_PATH')
+TOKEN_FILE = 'token.json'
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
-GITHUB_USERNAME = os.getenv('GITHUB_USERNAME')
-GITHUB_REPO = os.getenv('GITHUB_REPO')
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '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')
+GITHUB_USERNAME = os.getenv('GITHUB_USERNAME', 'jsgastondatamt5')
+GITHUB_REPO = os.getenv('GITHUB_REPO', 'MT5')
 
 # Kaggle configuration
-KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME')
+KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME', 'jsgastonalgotrading')
 KAGGLE_KERNEL_SLUG = 'forrest-trading-ml'
 
 # ============================================================================
@@ -398,24 +398,40 @@ def push_to_kaggle(script_path):
         with open(metadata_path, 'w') as f:
             json.dump(kernel_metadata, f, indent=2)
         
-        # Push usando kaggle CLI
-        result = subprocess.run(
-            ['kaggle', 'kernels', 'push', '-p', kernel_dir],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        # Push usando kaggle CLI (con python -m para mejor compatibilidad)
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'kaggle', 'kernels', 'push', '-p', kernel_dir],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except FileNotFoundError:
+            # Si python -m kaggle no funciona, intentar con kaggle directamente
+            result = subprocess.run(
+                ['kaggle', 'kernels', 'push', '-p', kernel_dir],
+                capture_output=True,
+                text=True,
+                check=True
+            )
         
         print(f"✅ Pushed to Kaggle!")
         print(f"   Kernel: https://www.kaggle.com/{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}")
         
         # Ejecutar el kernel
         print("\n▶️  Triggering kernel execution...")
-        exec_result = subprocess.run(
-            ['kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
-            capture_output=True,
-            text=True
-        )
+        try:
+            exec_result = subprocess.run(
+                ['python', '-m', 'kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
+                capture_output=True,
+                text=True
+            )
+        except FileNotFoundError:
+            exec_result = subprocess.run(
+                ['kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
+                capture_output=True,
+                text=True
+            )
         print(exec_result.stdout)
         
         return True
