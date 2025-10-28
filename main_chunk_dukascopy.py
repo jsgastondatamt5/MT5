@@ -63,12 +63,12 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 TOKEN_FILE = 'token.json'
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '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')
-GITHUB_USERNAME = os.getenv('GITHUB_USERNAME', 'jsgastondatamt5')
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN',  GH_PAT)
+GITHUB_USERNAME = os.getenv('GITHUB_USERNAME', GH_USERNAME)
 GITHUB_REPO = os.getenv('GITHUB_REPO', 'MT5')
 
 # Kaggle configuration
-KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME', 'jsgastonalgotrading')
+KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME', KAGGLE_USERNAME)
 KAGGLE_KERNEL_SLUG = 'forrest-trading-ml'
 
 # ============================================================================
