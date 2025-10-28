@@ -65,7 +65,7 @@ TOKEN_FILE = os.getenv('GOOGLE_TOKEN_PATH')
 # GitHub configuration
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 GITHUB_USERNAME = os.getenv('GITHUB_USERNAME')
-GITHUB_REPO = os.getenv('GITHUB_REPO', 'MT5')
+GITHUB_REPO = os.getenv('GITHUB_REPO')
 
 # Kaggle configuration
 KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME')
