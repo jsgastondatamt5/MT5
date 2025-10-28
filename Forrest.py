@@ -1,66 +1,22 @@
-"""
-Forrest Trading ML System - Auto-generated
-Generated: 2025-10-28 19:47:47
-Drive File ID: 16xkD3sGMfuXiUCKREfRApSK7XddX18Ck
-Data Source: Dukascopy
-"""
+# ============================================================================
+# Forrest Trading ML System - Auto-generated
+# Generated: 2025-10-28 21:25:10
+# Drive File ID: 1L3LcPJMh3Fb5BFzzmHNPt_LPL3-_RUse
+# Data Source: Dukascopy
+# ============================================================================
 
 import os
 
 # CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '16xkD3sGMfuXiUCKREfRApSK7XddX18Ck'
+DRIVE_FILE_ID = '1L3LcPJMh3Fb5BFzzmHNPt_LPL3-_RUse'
 os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
 
 print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
 print("📊 Data Source: Dukascopy (High Quality Forex Data)")
 
-"""
-Forrest Trading ML System - Auto-generated
-Generated: 2025-10-28 19:16:35
-Drive File ID: 1fLAh3uYpMxwsadISpnfkJZWOoikoMKjM
-Data Source: Dukascopy
-"""
-
-import os
-
-# CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '1fLAh3uYpMxwsadISpnfkJZWOoikoMKjM'
-os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
-
-print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
-print("📊 Data Source: Dukascopy (High Quality Forex Data)")
-
-"""
-Forrest Trading ML System - Auto-generated
-Generated: 2025-10-28 17:57:35
-Drive File ID: 19aAjfUfX-95RVbz-s34R0uKOJO6YBDKv
-Data Source: Dukascopy
-"""
-
-import os
-
-# CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '19aAjfUfX-95RVbz-s34R0uKOJO6YBDKv'
-os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
-
-print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
-print("📊 Data Source: Dukascopy (High Quality Forex Data)")
-
-"""
-Forrest Trading ML System - Auto-generated
-Generated: 2025-10-28 15:18:03
-Drive File ID: 1vgmzrGWZ4v_-oN7YrV0AHXiVzJomn3iu
-Data Source: Dukascopy
-"""
-
-import os
-
-# CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '1vgmzrGWZ4v_-oN7YrV0AHXiVzJomn3iu'
-os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
-
-print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
-print("📊 Data Source: Dukascopy (High Quality Forex Data)")
+# ============================================================================
+# CÓDIGO DEL TEMPLATE
+# ============================================================================
 
 # Instalar dependencias con reintentos y alternativas
 import subprocess
@@ -256,7 +212,7 @@ try:
     PLOTLY_AVAILABLE = True
 except:
     PLOTLY_AVAILABLE = False
-'''
+
 # Indicadores técnicos (opcional - usa implementación manual si no disponible)
 TA_AVAILABLE = False
 try:
@@ -5519,7 +5475,7 @@ print('='*70)
 # ============================================================================
 GITHUB_USERNAME = 'jsgastondatamt5'       # ← TU USUARIO DE GITHUB
 GITHUB_REPO = 'de-Kaggle-a-github'       # ← TU REPOSITORIO
-GITHUB_TOKEN = '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'   # ← TU TOKEN (Settings > Developer > Personal tokens)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") #'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'   # ← TU TOKEN (Settings > Developer > Personal tokens)
 GITHUB_BRANCH = 'main'               # o 'master'
 # ============================================================================
 
@@ -5615,14 +5571,5 @@ except Exception as e:
 finally:
     # Limpiar token de la salida por seguridad
     print('\n🔐 Token protegido en la salida')
-
-
-
-
-
-
-
-
-
 
 
