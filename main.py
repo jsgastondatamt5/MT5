@@ -55,7 +55,7 @@ if not creds or not creds.valid:
         flow = Flow.from_client_secrets_file(
             'credentials.json',
             scopes=SCOPES,
-            redirect_uri='http://localhost'
+            redirect_uri='http://localhost:8080'
         )
         auth_url, _ = flow.authorization_url(prompt='consent')
         print("🔗 Abre este enlace en tu navegador y autoriza el acceso:")
