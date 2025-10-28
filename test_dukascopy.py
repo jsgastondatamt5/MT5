@@ -100,12 +100,12 @@ def main():
         'main_chunk_dukascopy.py': 'Main script',
         'Forrest.ipynb': 'ML notebook',
         'credentials.json': 'Google Drive credentials',
-        'kaggle.json': 'Kaggle credentials (or ~/.kaggle/kaggle.json)'
+        'kaggle.json': 'Kaggle credentials (or ~/kaggle/kaggle.json)'
     }
     
     for filename, description in files.items():
         if filename == 'kaggle.json':
-            exists = os.path.exists(filename) or os.path.exists(os.path.expanduser('~/.kaggle/kaggle.json'))
+            exists = os.path.exists(filename) or os.path.exists(os.path.expanduser('~/kaggle/kaggle.json'))
         else:
             exists = os.path.exists(filename)
         
