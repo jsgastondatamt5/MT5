@@ -4,7 +4,10 @@
 
 # Credentials and API Keys
 credentials.json
-token.json
+#token.json
+git add token.json
+git commit -m "Add token for automated runs"
+git push
 client_secret*.json
 *.pem
 *.p12
