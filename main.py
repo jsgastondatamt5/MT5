@@ -40,19 +40,32 @@ df = pd.DataFrame(data)
 df.to_csv("eurusd_1min.csv", index=False)
 
 # 🔐 Autenticación moderna con localhost
+from google_auth_oauthlib.flow import Flow
+
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 creds = None
 
 if os.path.exists('token.json'):
     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
 if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
     else:
-        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        creds = flow.run_local_server(port=8080, open_browser=False)
-    with open('token.json', 'w') as token:
-        token.write(creds.to_json())
+        flow = Flow.from_client_secrets_file(
+            'credentials.json',
+            scopes=SCOPES,
+            redirect_uri='http://localhost'
+        )
+        auth_url, _ = flow.authorization_url(prompt='consent')
+        print("🔗 Abre este enlace en tu navegador y autoriza el acceso:")
+        print(auth_url)
+        code = input("🔑 Pega aquí el código de autorización: ")
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+
 
 # ☁️ Subir archivo a Drive
 file_path = "eurusd_1min.csv"
