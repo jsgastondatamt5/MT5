@@ -1,14 +1,14 @@
 # ============================================================================
 # Forrest Trading ML System - Auto-generated
-# Generated: 2025-10-28 21:26:24
-# Drive File ID: 1nyF_7mRtn9B4INggm6QHeFkI-Qy02BF1
+# Generated: 2025-10-28 21:28:40
+# Drive File ID: 1BPV7z6u08L0RIZ61KSPCcuMVoFgJYkL-
 # Data Source: Dukascopy
 # ============================================================================
 
 import os
 
 # CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
-DRIVE_FILE_ID = '1nyF_7mRtn9B4INggm6QHeFkI-Qy02BF1'
+DRIVE_FILE_ID = '1BPV7z6u08L0RIZ61KSPCcuMVoFgJYkL-'
 os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
 
 print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
