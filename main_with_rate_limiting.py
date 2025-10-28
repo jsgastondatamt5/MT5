@@ -26,8 +26,8 @@ API_KEY = os.getenv('POLYGON_API_KEY', 'xDz4sl2a8Xht_z0TH8_svpSB309X17kv')
 CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
 
 # Date range (smaller range for testing)
-START_DATE = datetime(2024, 1, 1)
-END_DATE = datetime(2024, 1, 31)  # Just January for now
+START_DATE = datetime(2023, 1, 1)
+END_DATE = datetime(2025, 10, 31)  # Just January for now
 
 # Symbol options - script will try forex first, then fall back to stocks
 FOREX_SYMBOL = "C:EURUSD"
