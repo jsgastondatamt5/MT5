@@ -29,12 +29,12 @@ load_dotenv()
 # CONFIGURATION
 # ============================================================================
 
-CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
-KAGGLE_CONFIG_FILE = os.getenv('KAGGLE_CONFIG_PATH', 'kaggle.json')
+CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH')
+KAGGLE_CONFIG_FILE = os.getenv('KAGGLE_CONFIG_PATH')
 
 # Date range - AUTOMÁTICO: desde hoy hacia atrás
 END_DATE = datetime.now()
-DAYS_TO_DOWNLOAD = int(os.getenv('DAYS_TO_DOWNLOAD', '90'))  # 3 meses por defecto
+DAYS_TO_DOWNLOAD = int(os.getenv('DAYS_TO_DOWNLOAD', '365'))  # 12 meses por defecto
 START_DATE = END_DATE - timedelta(days=DAYS_TO_DOWNLOAD)
 
 # Dukascopy configuration
@@ -60,15 +60,15 @@ OFFER_SIDE = dukascopy_python.OFFER_SIDE_BID
 
 # Google OAuth
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-TOKEN_FILE = 'token.json'
+TOKEN_FILE = os.getenv('GOOGLE_TOKEN_PATH')
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN',  GH_PAT)
-GITHUB_USERNAME = os.getenv('GITHUB_USERNAME', GH_USERNAME)
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+GITHUB_USERNAME = os.getenv('GITHUB_USERNAME')
 GITHUB_REPO = os.getenv('GITHUB_REPO', 'MT5')
 
 # Kaggle configuration
-KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME', KAGGLE_USERNAME)
+KAGGLE_USERNAME = os.getenv('KAGGLE_USERNAME')
 KAGGLE_KERNEL_SLUG = 'forrest-trading-ml'
 
 # ============================================================================
