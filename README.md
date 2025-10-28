@@ -101,6 +101,12 @@ git pull --rebase
 which kaggle || echo "Necesito configurar kaggle"
 ```
 
+# 5. Test de la API de Kaggle
+
+```bash
+python test_kaggle_api.py
+```
+
 ### Paso 2: Verificar
 
 ```bash
@@ -116,6 +122,18 @@ Debe mostrar:
 
 ```bash
 python main_chunk_dukascopy.py
+```
+# 2. Si el test pasa, pushea a Kaggle
+
+```bash
+python push_to_kaggle.py
+```
+
+# 3. Verifica en Kaggle
+
+```bash
+# Ve a: https://www.kaggle.com/jsgastonalgotrading/code
+# Busca: "forrest-trading-ml"
 ```
 
 **¡Eso es TODO!** 🎉
