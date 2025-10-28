@@ -5,6 +5,12 @@ Polygon Data Downloader - Auto Date Range & Kaggle Integration
 - Notifica a Kaggle con el file ID para procesamiento
 creado con claude primero main_auto_kaggle.py y luego con deepseek
 """
+"""
+YFinance Data Downloader - Auto Date Range & Kaggle Integration
+- Descarga desde hoy hacia atrás en chunks de 7 días (límite de yfinance para 1min)
+- Sube a Google Drive
+- Notifica a Kaggle con el file ID para procesamiento
+"""
 
 import requests
 import pandas as pd
@@ -12,6 +18,7 @@ from datetime import datetime, timedelta
 import os
 import time
 import json
+import yfinance as yf
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -26,24 +33,25 @@ load_dotenv()
 # CONFIGURATION
 # ============================================================================
 
-API_KEY = os.getenv('POLYGON_API_KEY', 'xDz4sl2a8Xht_z0TH8_svpSB309X17kv')
 CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
 
 # Date range - AUTOMÁTICO: desde hoy hacia atrás
 END_DATE = datetime.now()  # Hoy
-# Máximo disponible en free tier de Polygon: ~2 años para stocks, menos para forex
-DAYS_TO_DOWNLOAD = 365  # 1 año (ajusta según necesites)
+DAYS_TO_DOWNLOAD = 365  # 1 año
 START_DATE = END_DATE - timedelta(days=DAYS_TO_DOWNLOAD)
 
-# Tamaño de cada tanda (días)
-CHUNK_SIZE_DAYS = 30
+# Tamaño de cada tanda (días) - yfinance limita a 7 días para datos de 1min
+CHUNK_SIZE_DAYS = 7
 
-# Symbol options
-FOREX_SYMBOL = "C:EURUSD"
+# Symbol options (formato yfinance)
+FOREX_SYMBOL = "EURUSD=X"
 STOCK_SYMBOL = "AAPL"
 
-# Rate limiting
-REQUESTS_PER_MINUTE = 5
+# Timeframe (yfinance permite: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
+TIMEFRAME = "1m"
+
+# Rate limiting para yfinance (más permisivo que Polygon)
+REQUESTS_PER_MINUTE = 10
 DELAY_BETWEEN_REQUESTS = 60 / REQUESTS_PER_MINUTE
 
 # Google OAuth
@@ -70,9 +78,9 @@ def calculate_optimal_date_range(symbol_type='stock'):
     
     # Diferentes límites según el tipo de dato
     if symbol_type == 'forex':
-        # Forex en free tier es muy limitado, mejor usar menos días
-        days = 30  # 1 mes
-        desc = "Último mes (limitación forex free tier)"
+        # Forex en yfinance tiene buena disponibilidad
+        days = 60  # 2 meses
+        desc = "Últimos 2 meses"
     elif symbol_type == 'stock':
         # Stocks tienen mejor disponibilidad
         days = 365  # 1 año
@@ -86,40 +94,43 @@ def calculate_optimal_date_range(symbol_type='stock'):
     return start, end, desc
 
 
-def check_api_access(symbol, api_key):
-    """Check if the API key has access to the specified symbol"""
-    test_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{test_date}/{test_date}?adjusted=true&sort=asc&limit=5&apiKey={api_key}"
-    
-    try:
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("resultsCount", 0) > 0:
-                return True, f"✅ Access confirmed for {symbol}"
-            else:
-                return False, f"⚠️  No data available for {symbol} (may not be a trading day)"
-        elif response.status_code == 403:
-            return False, f"❌ No access to {symbol}. Your API plan may not include this data type."
-        elif response.status_code == 429:
-            return False, f"⚠️  Rate limited. Wait a moment and try again."
-        else:
-            return False, f"❌ Error {response.status_code}: {response.text[:100]}"
-    except Exception as e:
-        return False, f"❌ Connection error: {str(e)}"
-
-
-def download_data_in_chunks(symbol, start_date, end_date, api_key, chunk_days=30, delay=12):
+def check_api_access(symbol):
     """
-    Download historical data in chunks to avoid rate limits and maximize efficiency
+    Check if the symbol is available in yfinance
+    """
+    try:
+        print(f"🔍 Checking yfinance access for {symbol}...")
+        
+        # Test download for a small period
+        test_end = datetime.now()
+        test_start = test_end - timedelta(days=2)
+        
+        data = yf.download(
+            symbol, 
+            start=test_start, 
+            end=test_end, 
+            interval=TIMEFRAME,
+            progress=False
+        )
+        
+        if data.empty:
+            return False, f"⚠️  No data available for {symbol}"
+        else:
+            return True, f"✅ Access confirmed for {symbol} - {len(data)} records found"
+            
+    except Exception as e:
+        return False, f"❌ Error accessing {symbol}: {str(e)}"
+
+
+def download_data_in_chunks(symbol, start_date, end_date, chunk_days=7, delay=6):
+    """
+    Download historical data in chunks to respect yfinance limits
     
     Args:
         symbol: Ticker symbol
         start_date: Start datetime
         end_date: End datetime
-        api_key: Polygon API key
-        chunk_days: Number of days per chunk
+        chunk_days: Number of days per chunk (7 for 1min data)
         delay: Delay between requests in seconds
     
     Returns:
@@ -127,6 +138,7 @@ def download_data_in_chunks(symbol, start_date, end_date, api_key, chunk_days=30
     """
     print(f"\n📥 Downloading {symbol} data in {chunk_days}-day chunks...")
     print(f"   From {start_date.date()} to {end_date.date()}")
+    print(f"   Timeframe: {TIMEFRAME}")
     print(f"⏱️  Rate limit: {REQUESTS_PER_MINUTE} requests/minute ({delay:.1f}s between requests)")
     
     all_data = []
@@ -141,10 +153,10 @@ def download_data_in_chunks(symbol, start_date, end_date, api_key, chunk_days=30
         print(f"\n   Chunk {chunk_number}/{total_chunks}: {current_start.date()} to {current_end.date()}")
         
         # Download this chunk
-        chunk_data = download_single_chunk(symbol, current_start, current_end, api_key)
+        chunk_data = download_single_chunk(symbol, current_start, current_end)
         
-        if chunk_data is not None:
-            all_data.extend(chunk_data)
+        if chunk_data is not None and not chunk_data.empty:
+            all_data.append(chunk_data)
             print(f"      ✅ Downloaded {len(chunk_data):,} records")
         else:
             print(f"      ⚠️  No data in this chunk")
@@ -156,65 +168,84 @@ def download_data_in_chunks(symbol, start_date, end_date, api_key, chunk_days=30
         if current_start < end_date:
             time.sleep(delay)
     
-    print(f"\n✅ Download complete: {len(all_data):,} total records from {chunk_number} chunks")
-    
-    return pd.DataFrame(all_data) if all_data else None
+    if all_data:
+        combined_df = pd.concat(all_data, ignore_index=True)
+        # Remove duplicates in case of overlapping chunks
+        combined_df = combined_df.drop_duplicates(subset=['timestamp']).sort_values('timestamp')
+        print(f"\n✅ Download complete: {len(combined_df):,} total records from {chunk_number} chunks")
+        return combined_df
+    else:
+        print(f"\n❌ No data downloaded")
+        return None
 
 
-def download_single_chunk(symbol, start_date, end_date, api_key):
+def download_single_chunk(symbol, start_date, end_date):
     """
-    Download data for a single date range chunk
+    Download data for a single date range chunk using yfinance
     
     Args:
         symbol: Ticker symbol
         start_date: Start datetime for this chunk
         end_date: End datetime for this chunk
-        api_key: Polygon API key
     
     Returns:
-        list: List of data records
+        pd.DataFrame: Data for this chunk
     """
-    chunk_data = []
-    current_date = start_date
-    
-    while current_date < end_date:
-        date_str = current_date.strftime("%Y-%m-%d")
-        url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{date_str}/{date_str}?adjusted=true&sort=asc&limit=50000&apiKey={api_key}"
+    try:
+        # Convert to string format for yfinance
+        start_str = start_date.strftime("%Y-%m-%d")
+        end_str = end_date.strftime("%Y-%m-%d")
         
-        try:
-            response = requests.get(url, timeout=30)
-            
-            if response.status_code == 200:
-                results = response.json().get("results", [])
-                
-                if results:
-                    for item in results:
-                        chunk_data.append({
-                            "timestamp": datetime.fromtimestamp(item["t"] / 1000),
-                            "open": item["o"],
-                            "high": item["h"],
-                            "low": item["l"],
-                            "close": item["c"],
-                            "volume": item["v"]
-                        })
-            
-            elif response.status_code == 403:
-                print(f"\n❌ Access denied for {symbol}!")
-                return None
-            
-            elif response.status_code == 429:
-                print(f"\n⚠️  Rate limit hit on {date_str}. Waiting 60 seconds...")
-                time.sleep(60)
-                continue
-            
-            # Don't break on other errors, just continue to next day
+        # Download data
+        data = yf.download(
+            symbol, 
+            start=start_str, 
+            end=end_str, 
+            interval=TIMEFRAME,
+            progress=False
+        )
         
-        except requests.exceptions.RequestException as e:
-            print(f"   ⚠️  Connection error for {date_str}: {e}")
+        if data.empty:
+            return None
         
-        current_date += timedelta(days=1)
-    
-    return chunk_data
+        # Reset index to get DateTime as column
+        data = data.reset_index()
+        
+        # Rename columns to match our format
+        data.columns = [col.lower() for col in data.columns]
+        
+        # Standardize column names
+        column_mapping = {
+            'datetime': 'timestamp',
+            'date': 'timestamp',
+            'open': 'open',
+            'high': 'high', 
+            'low': 'low',
+            'close': 'close',
+            'volume': 'volume',
+            'adj close': 'adj_close'
+        }
+        
+        data = data.rename(columns=column_mapping)
+        
+        # Ensure we have the required columns
+        required_columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+        available_columns = [col for col in required_columns if col in data.columns]
+        
+        if len(available_columns) < 4:  # At least timestamp, OHLC
+            return None
+        
+        # Select only the columns we need
+        data = data[available_columns]
+        
+        # Ensure timestamp is datetime
+        data['timestamp'] = pd.to_datetime(data['timestamp'])
+        
+        return data
+        
+    except Exception as e:
+        print(f"      ⚠️  Error downloading chunk {start_date.date()} to {end_date.date()}: {e}")
+        return None
 
 
 def get_google_credentials(credentials_file, token_file, scopes):
@@ -438,31 +469,32 @@ kaggle kernels push -p /path/to/kernel \\
 
 def main():
     print("\n" + "="*80)
-    print("🚀 Auto Data Downloader with Kaggle Integration - CHUNKED DOWNLOAD")
+    print("🚀 YFinance Data Downloader with Kaggle Integration")
     print("="*80)
     print(f"📅 Today: {datetime.now().strftime('%Y-%m-%d')}")
-    print(f"📊 Will download in {CHUNK_SIZE_DAYS}-day chunks")
+    print(f"⏰ Timeframe: {TIMEFRAME}")
+    print(f"📊 Will download in {CHUNK_SIZE_DAYS}-day chunks (yfinance limit)")
     print("="*80)
     
     # Step 1: Check API access
-    print("\n🔍 Checking API access...")
+    print("\n🔍 Checking yfinance access...")
     
-    forex_access, forex_msg = check_api_access(FOREX_SYMBOL, API_KEY)
+    forex_access, forex_msg = check_api_access(FOREX_SYMBOL)
     print(f"   Forex ({FOREX_SYMBOL}): {forex_msg}")
     
-    stock_access, stock_msg = check_api_access(STOCK_SYMBOL, API_KEY)
+    stock_access, stock_msg = check_api_access(STOCK_SYMBOL)
     print(f"   Stock ({STOCK_SYMBOL}): {stock_msg}")
     
     # Determine which symbol to use and calculate optimal date range
     if forex_access:
         symbol = FOREX_SYMBOL
         symbol_type = 'forex'
-        output_file = f"eurusd_data_{datetime.now().strftime('%Y%m%d')}.csv"
+        output_file = f"eurusd_{TIMEFRAME}_data_{datetime.now().strftime('%Y%m%d')}.csv"
         print(f"\n✅ Using forex data: {symbol}")
     elif stock_access:
         symbol = STOCK_SYMBOL
         symbol_type = 'stock'
-        output_file = f"stock_data_{datetime.now().strftime('%Y%m%d')}.csv"
+        output_file = f"stock_{TIMEFRAME}_data_{datetime.now().strftime('%Y%m%d')}.csv"
         print(f"\n⚠️  Forex not available. Using stock data: {symbol}")
     else:
         print("\n❌ ERROR: No data access available!")
@@ -474,14 +506,13 @@ def main():
     print(f"   From: {start_date.strftime('%Y-%m-%d')}")
     print(f"   To: {end_date.strftime('%Y-%m-%d')}")
     print(f"   Days: {(end_date - start_date).days}")
-    print(f"   Chunk size: {CHUNK_SIZE_DAYS} days")
+    print(f"   Chunk size: {CHUNK_SIZE_DAYS} days (yfinance limit for {TIMEFRAME})")
     
     # Step 2: Download data in chunks
     df = download_data_in_chunks(
         symbol, 
         start_date, 
         end_date, 
-        API_KEY, 
         chunk_days=CHUNK_SIZE_DAYS,
         delay=DELAY_BETWEEN_REQUESTS
     )
@@ -500,12 +531,14 @@ def main():
     metadata = {
         "symbol": symbol,
         "symbol_type": symbol_type,
+        "timeframe": TIMEFRAME,
         "start_date": start_date.strftime('%Y-%m-%d'),
         "end_date": end_date.strftime('%Y-%m-%d'),
         "chunk_size_days": CHUNK_SIZE_DAYS,
         "total_rows": len(df),
         "file_size_mb": round(file_size_mb, 2),
         "columns": list(df.columns),
+        "data_source": "yfinance",
         "generated_at": datetime.now().isoformat()
     }
     
