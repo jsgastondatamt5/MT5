@@ -77,7 +77,7 @@ pip install dukascopy-python
 O mejor aún, instalar todo:
 
 ```bash
-pip install -r requirements_dukascopy.txt
+pip install -r requirements.txt
 ```
 
 ### Paso 2: Verificar
