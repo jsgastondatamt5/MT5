@@ -1,0 +1,75 @@
+name: Daily Data Download and Kaggle Processing
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 02:00 UTC (3:00 AM en España durante invierno)
+    - cron: '0 2 * * *'
+  
+  workflow_dispatch:  # Permitir ejecución manual
+
+jobs:
+  download-and-process:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy yfinance google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client python-dotenv kaggle
+      
+      - name: Setup Google Drive credentials
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+          echo '${{ secrets.GOOGLE_TOKEN }}' > token.json
+      
+      - name: Setup Kaggle credentials
+        run: |
+          mkdir -p ~/.kaggle
+          echo '${{ secrets.KAGGLE_JSON }}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+      
+      - name: Copy Forrest template
+        run: |
+          # Copiar el template si existe
+          if [ -f "Forrest.ipynb" ]; then
+            echo "✅ Forrest.ipynb found"
+          else
+            echo "⚠️  Forrest.ipynb not found"
+          fi
+      
+      - name: Run main script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
+          GITHUB_REPO: MT5
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        run: |
+          python main_chunk_kaggle.py
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Daily data update $(date +'%Y-%m-%d')" && git push)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Send notification (optional)
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Workflow completed successfully"
+          else
+            echo "❌ Workflow failed"
+          fi

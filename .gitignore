@@ -1,50 +1,26 @@
-# ============================================
-# CRITICAL: NEVER COMMIT THESE FILES
-# ============================================
-
-# Credentials and API Keys
+# ============================================================================
+# Archivos de Credenciales - NUNCA COMMITEAR
+# ============================================================================
 credentials.json
-#token.json
-git add token.json
-git commit -m "Add token for automated runs"
-git push
-client_secret*.json
-*.pem
-*.p12
+token.json
+kaggle.json
 .env
-.env.local
-.env.production
-.env.development
 
-# API Keys in code (if not using env vars)
-config.py
-secrets.py
-api_keys.py
-
-# Data files with potentially sensitive info
+# ============================================================================
+# Archivos Temporales
+# ============================================================================
 *.csv
-eurusd_*.csv
-*.xlsx
-*.xls
-*.json
-*.parquet
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.log
 
-# Backups
-*.backup
-*.bak
-*.old
-
-# ============================================
 # Python
-# ============================================
-
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -58,227 +34,51 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# poetry
-poetry.lock
-
-# pdm
-.pdm.toml
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-env/
+# Virtual Environment
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
+.venv
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# ============================================
-# IDEs and Editors
-# ============================================
-
-# Visual Studio Code
+# IDEs
 .vscode/
-*.code-workspace
-
-# PyCharm
 .idea/
-*.iml
-*.iws
-*.ipr
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Eclipse
-.project
-.pydevproject
-.settings/
-
-# Vim
 *.swp
 *.swo
 *~
-
-# Emacs
-*~
-\#*\#
-.\#*
-
-# ============================================
-# Operating Systems
-# ============================================
-
-# macOS
 .DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
 
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
 
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
-# ============================================
-# Logs and Databases
-# ============================================
-
-# Logs
-*.log
+# Output folders
+models/
+plots/
+backtest_results/
+data_analysis/
 logs/
-*.log.*
+outputs/
+results/
 
-# Databases
-*.db
-*.sqlite
-*.sqlite3
+# GitHub temporary
+github_repo/
 
-# ============================================
-# Temporary Files
-# ============================================
+# Kaggle temporary
+/kaggle/
+/tmp/
 
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.temp
+# OS
+.DS_Store
+Thumbs.db
 
-# Archives
-*.zip
-*.tar.gz
-*.rar
-*.7z
-
-# ============================================
-# Project Specific
-# ============================================
-
-# Downloaded forex data (uncomment if you want to track CSV files)
-# !eurusd_1min.csv
-
-# Output directory (uncomment if you want to track outputs)
-# !outputs/
-
-# ============================================
-# Notes
-# ============================================
-
-# README: This .gitignore protects sensitive data from being committed
-# If you need to commit specific files listed here, use:
-# git add -f filename
-# But BE CAREFUL with credentials!
+# Backup files
+*.bak
+*.backup
