@@ -326,12 +326,29 @@ def push_to_github(file_path, commit_message):
         subprocess.run(['git', 'config', '--global', 'user.email', f'{GITHUB_USERNAME}@users.noreply.github.com'], check=True)
         subprocess.run(['git', 'config', '--global', 'user.name', GITHUB_USERNAME], check=True)
         
+        # PRIMERO: Pull para sincronizar
+        print("🔄 Syncing with remote...")
+        repo_url = f'https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git'
+        
+        try:
+            subprocess.run(['git', 'pull', repo_url, 'main', '--rebase'], check=True)
+            print("✅ Synced with remote")
+        except subprocess.CalledProcessError:
+            print("⚠️  Pull had conflicts, trying merge...")
+            subprocess.run(['git', 'pull', repo_url, 'main', '--no-rebase'], check=True)
+        
         # Add y commit
         subprocess.run(['git', 'add', file_path], check=True)
+        
+        # Check if there are changes to commit
+        result = subprocess.run(['git', 'diff', '--cached', '--quiet'], capture_output=True)
+        if result.returncode == 0:
+            print("ℹ️  No changes to commit")
+            return True
+        
         subprocess.run(['git', 'commit', '-m', commit_message], check=True)
         
-        # Push usando token
-        repo_url = f'https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git'
+        # Push
         subprocess.run(['git', 'push', repo_url, 'main'], check=True)
         
         print(f"✅ Pushed to GitHub: {GITHUB_USERNAME}/{GITHUB_REPO}")
@@ -398,22 +415,54 @@ def push_to_kaggle(script_path):
         with open(metadata_path, 'w') as f:
             json.dump(kernel_metadata, f, indent=2)
         
-        # Push usando kaggle CLI (con python -m para mejor compatibilidad)
+        # Intentar diferentes métodos para ejecutar kaggle
+        print("🔄 Attempting to push to Kaggle...")
+        
+        # Método 1: Buscar el ejecutable de kaggle
+        kaggle_paths = [
+            os.path.expanduser('~/.local/bin/kaggle'),
+            '/usr/local/bin/kaggle',
+            '/usr/bin/kaggle',
+            shutil.which('kaggle')  # Buscar en PATH
+        ]
+        
+        kaggle_cmd = None
+        for path in kaggle_paths:
+            if path and os.path.isfile(path) and os.access(path, os.X_OK):
+                kaggle_cmd = path
+                print(f"✅ Found kaggle at: {kaggle_cmd}")
+                break
+        
+        if not kaggle_cmd:
+            print("⚠️  kaggle command not found in common locations")
+            print("   Trying with 'kaggle' command anyway...")
+            kaggle_cmd = 'kaggle'
+        
+        # Push usando el comando encontrado
         try:
             result = subprocess.run(
-                ['python', '-m', 'kaggle', 'kernels', 'push', '-p', kernel_dir],
+                [kaggle_cmd, 'kernels', 'push', '-p', kernel_dir],
                 capture_output=True,
                 text=True,
                 check=True
             )
+            print(result.stdout)
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Kaggle push failed: {e}")
+            if e.stdout:
+                print(f"   stdout: {e.stdout}")
+            if e.stderr:
+                print(f"   stderr: {e.stderr}")
+            return False
         except FileNotFoundError:
-            # Si python -m kaggle no funciona, intentar con kaggle directamente
-            result = subprocess.run(
-                ['kaggle', 'kernels', 'push', '-p', kernel_dir],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            print("❌ kaggle command not found")
+            print("\n💡 Troubleshooting:")
+            print("   1. Find kaggle: which kaggle")
+            print("   2. Check PATH: echo $PATH")
+            print("   3. Add to PATH: export PATH=$HOME/.local/bin:$PATH")
+            print("   4. Or use full path in script")
+            return False
         
         print(f"✅ Pushed to Kaggle!")
         print(f"   Kernel: https://www.kaggle.com/{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}")
@@ -422,25 +471,16 @@ def push_to_kaggle(script_path):
         print("\n▶️  Triggering kernel execution...")
         try:
             exec_result = subprocess.run(
-                ['python', '-m', 'kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
+                [kaggle_cmd, 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
                 capture_output=True,
                 text=True
             )
-        except FileNotFoundError:
-            exec_result = subprocess.run(
-                ['kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
-                capture_output=True,
-                text=True
-            )
-        print(exec_result.stdout)
+            print(exec_result.stdout)
+        except Exception:
+            pass  # No es crítico si esto falla
         
         return True
         
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Kaggle push error: {e}")
-        print(f"   stdout: {e.stdout}")
-        print(f"   stderr: {e.stderr}")
-        return False
     except Exception as e:
         print(f"❌ Error: {e}")
         return False
