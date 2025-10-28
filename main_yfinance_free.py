@@ -33,8 +33,8 @@ except ImportError:
 # ============================================================================
 
 # Date range
-START_DATE = "2023-01-01"
-END_DATE = "2023-10-02"
+START_DATE = "2022-01-01"
+END_DATE = "2023-10-28"
 
 # Forex pair (Yahoo Finance format)
 FOREX_PAIR = "EURUSD=X"  # Other options: GBPUSD=X, USDJPY=X, AUDUSD=X
