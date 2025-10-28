@@ -33,7 +33,7 @@ def setup_kaggle_credentials():
     return True
 
 def push_to_kaggle(script_path='Forrest.py'):
-    """Push script to Kaggle kernel"""
+    """Push script to Kaggle kernel using Python API"""
     print("\n" + "="*70)
     print("🚀 PUSHING TO KAGGLE")
     print("="*70 + "\n")
@@ -50,9 +50,30 @@ def push_to_kaggle(script_path='Forrest.py'):
             print("❌ Kaggle credentials not configured")
             return False
         
+        # Import Kaggle API
+        try:
+            from kaggle import api
+            print("✅ Kaggle API imported")
+        except ImportError:
+            print("❌ Kaggle package not found")
+            print("   Install: pip install kaggle")
+            return False
+        
+        # Authenticate
+        try:
+            api.authenticate()
+            print("✅ Kaggle API authenticated")
+        except Exception as e:
+            print(f"❌ Authentication failed: {e}")
+            print("\n💡 Check credentials:")
+            print("   ls -la ~/.kaggle/kaggle.json")
+            return False
+        
         # Create kernel metadata
+        kernel_slug = f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"
+        
         kernel_metadata = {
-            "id": f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}",
+            "id": kernel_slug,
             "title": "Forrest Trading ML - Dukascopy Data",
             "code_file": os.path.basename(script_path),
             "language": "python",
@@ -79,93 +100,63 @@ def push_to_kaggle(script_path='Forrest.py'):
             json.dump(kernel_metadata, f, indent=2)
         print(f"✅ Metadata created")
         
-        # Try push with python -m kaggle first
-        print("\n🔄 Attempting push to Kaggle...")
-        print("   Method 1: Using 'python -m kaggle'")
+        # Push using Python API
+        print("\n🔄 Pushing to Kaggle using Python API...")
         
         try:
-            result = subprocess.run(
-                ['python', '-m', 'kaggle', 'kernels', 'push', '-p', kernel_dir],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            print(result.stdout)
-            method = "python -m kaggle"
+            result = api.kernels_push(kernel_dir)
             
-        except (FileNotFoundError, subprocess.CalledProcessError) as e:
-            print(f"   Method 1 failed: {e}")
-            print("   Method 2: Using 'kaggle' command directly")
+            print("\n" + "="*70)
+            print("✅ PUSH SUCCESSFUL!")
+            print("="*70)
+            print(f"🔗 Kernel: https://www.kaggle.com/{kernel_slug}")
+            print(f"📊 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
-            try:
-                result = subprocess.run(
-                    ['kaggle', 'kernels', 'push', '-p', kernel_dir],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                print(result.stdout)
-                method = "kaggle"
-                
-            except (FileNotFoundError, subprocess.CalledProcessError) as e:
-                print(f"   Method 2 failed: {e}")
-                print("\n   Method 3: Using full path")
-                
-                # Try with full path
-                kaggle_path = os.path.expanduser('~/.local/bin/kaggle')
-                result = subprocess.run(
-                    [kaggle_path, 'kernels', 'push', '-p', kernel_dir],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                print(result.stdout)
-                method = "full path"
-        
-        print("\n" + "="*70)
-        print("✅ PUSH SUCCESSFUL!")
-        print("="*70)
-        print(f"📍 Method used: {method}")
-        print(f"🔗 Kernel: https://www.kaggle.com/{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}")
-        print(f"📊 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("="*70)
-        
-        # Try to get kernel status
-        print("\n▶️  Checking kernel status...")
-        try:
-            if method == "python -m kaggle":
-                status_result = subprocess.run(
-                    ['python', '-m', 'kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
-                    capture_output=True,
-                    text=True
-                )
-            else:
-                status_result = subprocess.run(
-                    ['kaggle', 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
-                    capture_output=True,
-                    text=True
-                )
-            print(status_result.stdout)
+            if result and hasattr(result, 'ref'):
+                print(f"📍 Ref: {result.ref}")
+            
+            print("="*70)
+            
+            return True
+            
         except Exception as e:
-            print(f"   (Could not get status: {e})")
-        
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        print("\n" + "="*70)
-        print("❌ PUSH FAILED")
-        print("="*70)
-        print(f"Error: {e}")
-        if e.stdout:
-            print(f"Output: {e.stdout}")
-        if e.stderr:
-            print(f"Error: {e.stderr}")
-        print("\n💡 Troubleshooting:")
-        print("   1. Check kaggle is installed: pip install kaggle")
-        print("   2. Check credentials: ls -la ~/.kaggle/kaggle.json")
-        print("   3. Test manually: python -m kaggle datasets list --max-size 1")
-        print("   4. Check PATH: echo $PATH")
-        return False
+            error_msg = str(e).lower()
+            
+            # If kernel doesn't exist, try to create
+            if 'not found' in error_msg or 'does not exist' in error_msg:
+                print("⚠️  Kernel doesn't exist, creating new one...")
+                
+                try:
+                    result = api.kernels_push_cli(kernel_dir)
+                    
+                    print("\n" + "="*70)
+                    print("✅ NEW KERNEL CREATED!")
+                    print("="*70)
+                    print(f"🔗 Kernel: https://www.kaggle.com/{kernel_slug}")
+                    print("="*70)
+                    
+                    return True
+                    
+                except Exception as create_error:
+                    print("\n" + "="*70)
+                    print("❌ FAILED TO CREATE KERNEL")
+                    print("="*70)
+                    print(f"Error: {create_error}")
+                    print("\n💡 Try manually:")
+                    print(f"   1. Go to: https://www.kaggle.com/code")
+                    print(f"   2. Create a new notebook named: {KAGGLE_KERNEL_SLUG}")
+                    print(f"   3. Run this script again")
+                    return False
+            else:
+                print("\n" + "="*70)
+                print("❌ PUSH FAILED")
+                print("="*70)
+                print(f"Error: {e}")
+                print("\n💡 Troubleshooting:")
+                print("   1. Check kernel exists: https://www.kaggle.com/code")
+                print("   2. Check credentials: cat ~/.kaggle/kaggle.json")
+                print("   3. Test API: python -c 'from kaggle import api; api.authenticate()'")
+                return False
         
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")

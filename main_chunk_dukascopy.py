@@ -379,7 +379,7 @@ def setup_kaggle_credentials():
 
 
 def push_to_kaggle(script_path):
-    """Push script to Kaggle kernel using kaggle CLI"""
+    """Push script to Kaggle kernel using Kaggle Python API"""
     print(f"\n🚀 Pushing {script_path} to Kaggle...")
     
     try:
@@ -388,9 +388,38 @@ def push_to_kaggle(script_path):
             print("❌ Kaggle credentials not configured")
             return False
         
-        # Crear metadata para el kernel
+        # Import Kaggle API
+        try:
+            from kaggle import api
+            from kaggle.api.kaggle_api_extended import KaggleApi
+        except ImportError:
+            print("❌ Kaggle package not found")
+            print("   Install: pip install kaggle")
+            return False
+        
+        # Authenticate
+        try:
+            api.authenticate()
+            print("✅ Kaggle API authenticated")
+        except Exception as e:
+            print(f"❌ Authentication failed: {e}")
+            return False
+        
+        # Preparar metadata del kernel
+        kernel_slug = f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"
+        
+        # Crear directorio temporal para el kernel
+        kernel_dir = '/tmp/kaggle_kernel'
+        os.makedirs(kernel_dir, exist_ok=True)
+        
+        # Copiar script
+        script_dest = os.path.join(kernel_dir, os.path.basename(script_path))
+        shutil.copy(script_path, script_dest)
+        print(f"✅ Script copied to {kernel_dir}")
+        
+        # Crear metadata
         kernel_metadata = {
-            "id": f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}",
+            "id": kernel_slug,
             "title": "Forrest Trading ML - Dukascopy Data",
             "code_file": os.path.basename(script_path),
             "language": "python",
@@ -403,86 +432,52 @@ def push_to_kaggle(script_path):
             "kernel_sources": []
         }
         
-        # Crear directorio temporal para el kernel
-        kernel_dir = '/tmp/kaggle_kernel'
-        os.makedirs(kernel_dir, exist_ok=True)
-        
-        # Copiar script
-        shutil.copy(script_path, os.path.join(kernel_dir, os.path.basename(script_path)))
-        
         # Guardar metadata
         metadata_path = os.path.join(kernel_dir, 'kernel-metadata.json')
         with open(metadata_path, 'w') as f:
             json.dump(kernel_metadata, f, indent=2)
+        print("✅ Metadata created")
         
-        # Intentar diferentes métodos para ejecutar kaggle
-        print("🔄 Attempting to push to Kaggle...")
+        # Push usando la API de Python
+        print("🔄 Pushing to Kaggle using Python API...")
         
-        # Método 1: Buscar el ejecutable de kaggle
-        kaggle_paths = [
-            os.path.expanduser('~/.local/bin/kaggle'),
-            '/usr/local/bin/kaggle',
-            '/usr/bin/kaggle',
-            shutil.which('kaggle')  # Buscar en PATH
-        ]
-        
-        kaggle_cmd = None
-        for path in kaggle_paths:
-            if path and os.path.isfile(path) and os.access(path, os.X_OK):
-                kaggle_cmd = path
-                print(f"✅ Found kaggle at: {kaggle_cmd}")
-                break
-        
-        if not kaggle_cmd:
-            print("⚠️  kaggle command not found in common locations")
-            print("   Trying with 'kaggle' command anyway...")
-            kaggle_cmd = 'kaggle'
-        
-        # Push usando el comando encontrado
         try:
-            result = subprocess.run(
-                [kaggle_cmd, 'kernels', 'push', '-p', kernel_dir],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            print(result.stdout)
+            # Intentar push del kernel
+            result = api.kernels_push(kernel_dir)
+            print("✅ Pushed to Kaggle!")
+            print(f"   Kernel: https://www.kaggle.com/{kernel_slug}")
             
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Kaggle push failed: {e}")
-            if e.stdout:
-                print(f"   stdout: {e.stdout}")
-            if e.stderr:
-                print(f"   stderr: {e.stderr}")
-            return False
-        except FileNotFoundError:
-            print("❌ kaggle command not found")
-            print("\n💡 Troubleshooting:")
-            print("   1. Find kaggle: which kaggle")
-            print("   2. Check PATH: echo $PATH")
-            print("   3. Add to PATH: export PATH=$HOME/.local/bin:$PATH")
-            print("   4. Or use full path in script")
-            return False
-        
-        print(f"✅ Pushed to Kaggle!")
-        print(f"   Kernel: https://www.kaggle.com/{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}")
-        
-        # Ejecutar el kernel
-        print("\n▶️  Triggering kernel execution...")
-        try:
-            exec_result = subprocess.run(
-                [kaggle_cmd, 'kernels', 'status', f"{KAGGLE_USERNAME}/{KAGGLE_KERNEL_SLUG}"],
-                capture_output=True,
-                text=True
-            )
-            print(exec_result.stdout)
-        except Exception:
-            pass  # No es crítico si esto falla
-        
-        return True
+            # Info sobre el resultado
+            if result and hasattr(result, 'ref'):
+                print(f"   Ref: {result.ref}")
+            
+            return True
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            
+            # Si el kernel no existe, intentar crear uno nuevo
+            if 'not found' in error_msg or 'does not exist' in error_msg:
+                print("⚠️  Kernel doesn't exist, trying to create new one...")
+                
+                try:
+                    # Crear nuevo kernel
+                    api.kernels_push_cli(kernel_dir)
+                    print("✅ New kernel created and pushed!")
+                    print(f"   Kernel: https://www.kaggle.com/{kernel_slug}")
+                    return True
+                    
+                except Exception as create_error:
+                    print(f"❌ Failed to create kernel: {create_error}")
+                    return False
+            else:
+                print(f"❌ Push failed: {e}")
+                return False
         
     except Exception as e:
         print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
