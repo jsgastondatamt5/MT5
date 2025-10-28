@@ -122,7 +122,7 @@ Debe mostrar:
 ```bash
 python main_chunk_dukascopy_v2.py
 ```
-# 2. Si el test pasa, pushea a Kaggle
+# 2. Si el test NO pasa, pushea a Kaggle
 
 ```bash
 python push_to_kaggle_fixed.py
