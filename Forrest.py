@@ -1,5 +1,21 @@
 """
 Forrest Trading ML System - Auto-generated
+Generated: 2025-10-28 19:16:35
+Drive File ID: 1fLAh3uYpMxwsadISpnfkJZWOoikoMKjM
+Data Source: Dukascopy
+"""
+
+import os
+
+# CONFIGURACIÓN AUTOMÁTICA DEL FILE_ID
+DRIVE_FILE_ID = '1fLAh3uYpMxwsadISpnfkJZWOoikoMKjM'
+os.environ['DRIVE_FILE_ID'] = DRIVE_FILE_ID
+
+print(f"✅ Using Drive File ID: {DRIVE_FILE_ID}")
+print("📊 Data Source: Dukascopy (High Quality Forex Data)")
+
+"""
+Forrest Trading ML System - Auto-generated
 Generated: 2025-10-28 17:57:35
 Drive File ID: 19aAjfUfX-95RVbz-s34R0uKOJO6YBDKv
 Data Source: Dukascopy
@@ -5583,6 +5599,9 @@ except Exception as e:
 finally:
     # Limpiar token de la salida por seguridad
     print('\n🔐 Token protegido en la salida')
+
+
+
 
 
 
