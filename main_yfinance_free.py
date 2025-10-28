@@ -2,6 +2,7 @@
 FREE Forex Data Downloader using Yahoo Finance
 No API key required - downloads EURUSD data and uploads to Google Drive
 """
+pip install yfinance
 
 import pandas as pd
 from datetime import datetime, timedelta
