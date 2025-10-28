@@ -91,7 +91,6 @@ chmod +x find_kaggle.sh
 # 3. Sincronizar Git
 
 ```bash
-# 3. Sincronizar Git
 git pull --rebase
 ```
 
