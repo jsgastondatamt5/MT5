@@ -22,7 +22,7 @@ data = []
 current_date = start_date
 while current_date < end_date:
     date_str = current_date.strftime("%Y-%m-%d")
-    url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{date_str}/{date_str}?adjusted=true&sort=asc&limit=500000&apiKey={API_KEY}"
+    url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/1/minute/{date_str}/{date_str}?adjusted=true&sort=asc&limit=50000&apiKey={API_KEY}"
     response = requests.get(url)
     results = response.json().get("results", [])
     for item in results:
